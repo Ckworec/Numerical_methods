@@ -6,9 +6,12 @@ int main()
 	double (*f)(Vector x);
 	f = f1;
 	double epsilon = 1e-8;
-	vector<double> x00(3);
+	int act_size;
+	cout << "Enter problem size: ";
+	cin >> act_size;
+	vector<double> x00(act_size);
 
-	cout << "Enter start point: " << endl;
+	cout << "Enter start point: ";
 	for (int i = 0; i < x00.size(); i++) 
 		cin >> x00[i];
 
