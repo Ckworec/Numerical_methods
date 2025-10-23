@@ -1,39 +1,33 @@
 #include "Task1.h"
 
-
 double Task1::StepSplittingMethod(double (*f)(Vector x), Vector& xk, Vector& hk)
 {
-	auto phi = [&](double t) { return f(xk + hk * t); };
-	double lambda = 0.5, mu = 2;
-	double alpha, beta;
-	double alpha_k;
+    auto phi = [&](double t) { return f(xk + hk * t); };
 
-	double alpha_max = 10;
+    const double lambda = 0.5;
+    const double mu = 2.0;
+    const double beta = 0.1;
+    const double alpha_max = 10.0;
+    const double alpha_min = 1e-12;
 
-	beta = 0.1;
-	alpha = beta;
+    double alpha = beta;
+    double f0 = f(xk); // phi(0)
 
-	if (phi(alpha) < f(xk))
-	{
-		do
-		{
-			alpha_k = alpha;
-			alpha *= mu;
-		} 
-		while (phi(alpha) < phi(beta) && alpha <= alpha_max);
-	}
-	else
-	{
-		do
-		{
-			alpha_k = alpha;
-			alpha *= lambda;
-		} 
-		while (!(phi(alpha) < f(xk)));
-	}
+    if (phi(alpha) < f0) {
+        while (alpha * mu <= alpha_max && phi(alpha * mu) < phi(alpha)) {
+            alpha *= mu;
+        }
 
-	return alpha_k;
+        return alpha;
+    }  else {
+        while (alpha > alpha_min && !(phi(alpha) < f0)) {
+            alpha *= lambda;
+        }
+        
+		return alpha;
+    }
 }
+
 
 double Task1::goldenSection(double (*f)(Vector x), Vector& xk, Vector& hk, double epsilon) {
     const double r = (3.0 - std::sqrt(5.0)) / 2.0;
@@ -55,14 +49,12 @@ double Task1::goldenSection(double (*f)(Vector x), Vector& xk, Vector& hk, doubl
     int iter = 0;
     while ((b - a) > epsilon) {
         if (fc < fd) {
-            // минимум в [a, d]
             b = d;
             d = c;
             fd = fc;
             c = a + r * (b - a);
             fc = phi(c);
         } else {
-            // минимум в [c, b]
             a = c;
             c = d;
             fc = fd;
@@ -101,7 +93,6 @@ void Task1::FirstMethod(double(*f)(Vector x), const double epsilon, Vector& x0, 
 
 	do
 	{
-		// Считаем градиент
 		for (int i = 0; i < n; i++)
 		{
 			df[i] = (f(xk + d[i]) - f(xk - d[i])) / (2 * tau);
@@ -116,15 +107,9 @@ void Task1::FirstMethod(double(*f)(Vector x), const double epsilon, Vector& x0, 
 		diff_f = std::fabs(f(xk1) - f(xk));
 		grad_norm_sqr = norm_sqr(Df);
 
-		// cout << "Df = " << Df;
-		// cout << "alpha_k = " << alpha_k << endl;
-		// cout << "xk = " << xk;
-		// cout << "xk+1 = " << xk1;
-		// cout << difference_norm_sqr << "\t" << diff_f << "\t" << grad_norm_sqr << endl << endl;
-
 		xk = xk1;
 		iterations++;
-	} while (difference_norm_sqr > epsilon && diff_f * diff_f > epsilon && grad_norm_sqr > epsilon);
+	} while (difference_norm_sqr > epsilon || diff_f * diff_f > epsilon || grad_norm_sqr > epsilon);
 
 	x = xk1;
 	cout << "Iterations first method: " << iterations << endl << endl;
@@ -164,15 +149,12 @@ void Task1::SecondMethod(double (*f)(Vector x), const double epsilon, Vector& x0
 	int iterations = 0;
 	do
 	{
-		// Считаем градиент
-		for (int i = 0; i < n; i++)
-		{
+		for (int i = 0; i < n; i++) {
 			grad_f[i] = (f(xk + d[i]) - f(xk - d[i])) / (2 * tau);
 		}
 
 		Df = grad_f;
 
-		// Считаем матрицу Гесса
 		for (int i = 0; i < n; i++)
 		{
 			df[i] = [&](Vector p) { return (f(p + d[i]) - f(p)) / tau; };
@@ -187,7 +169,6 @@ void Task1::SecondMethod(double (*f)(Vector x), const double epsilon, Vector& x0
 		}
 
 		He.Move(der2f);
-		// Решаем систему методом Гаусса
 		hk = He.Gauss(Df) * (-1);
 		alpha_k = goldenSection(f, xk, hk, epsilon);
 		xk1 = xk + hk * alpha_k;
@@ -196,13 +177,9 @@ void Task1::SecondMethod(double (*f)(Vector x), const double epsilon, Vector& x0
 		diff_f = std::fabs(f(xk1) - f(xk));
 		grad_norm_sqr = norm_sqr(Df);
 
-		// cout << "xk = " << xk;
-		// cout << "alpha_k = " << alpha_k << endl;
-		// cout << "Df = " << Df << endl;
-
 		xk = xk1;
 		iterations++;
-	} while (difference_norm_sqr > epsilon*epsilon && diff_f > epsilon && grad_norm_sqr > epsilon*epsilon);
+	} while (difference_norm_sqr > epsilon*epsilon || diff_f > epsilon || grad_norm_sqr > epsilon*epsilon);
 
 	x = xk1;
 	cout << "Iterations second method: " << iterations << endl << endl;

@@ -5,7 +5,7 @@ int main()
 {
 	double (*f)(Vector x);
 	f = f1;
-	double epsilon = 1e-8;
+	double epsilon = 1e-6;
 	int act_size;
 	cout << "Enter problem size: ";
 	cin >> act_size;
